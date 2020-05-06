@@ -1,20 +1,26 @@
 version: '3.3'
 
 services:
-  mysql:
-    image: mysql:5.7
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  postgres:
+    image: postgres
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root_pwd
+      - POSTGRES_PASSWORD=root_pwd
+      - PG_DATA=/var/lib/postgresql/data/pgdata/
     ports:
       - "3306:3306"
       - "33060:33060"
     volumes:
-      - ./mnt/mysql/conf.d:/etc/mysql/conf.d
-      - ./mnt/mysql/initdb.d:/docker-entrypoint-initdb.d
-      - db-data:/var/lib/mysql
-
+      - db-data:/var/lib/postgresql/data
   elasticsearch:
     image: elasticsearch:6.5.0
+    restart: always
     environment:
       - discovery.type=single-node
       - cluster.name=LiferayElasticsearchCluster
@@ -30,17 +36,23 @@ services:
       - "9300:9300"
     volumes:
       - es-data:/usr/share/elasticsearch/data
-
   liferay:
     image: ibaiborodine/liferay-portal-ce:7.1.3-ga4-jdk11
+    restart: always
+    environment:
+      LIFERAY_SETUP_PERIOD_WIZARD_PERIOD_ENABLED: "false"
+      LIFERAY_TERMS_PERIOD_OF_PERIOD_USE_PERIOD_REQUIRED: "false"
+      LIFERAY_USERS_PERIOD_REMINDER_PERIOD_QUERIES_PERIOD_ENABLED: "false"
+      LIFERAY_USERS_PERIOD_REMINDER_PERIOD_QUERIES_PERIOD_CUSTOM_PERIOD_QUESTION_PERIOD_ENABLED: "false"
     depends_on:
-      - mysql
+      - postgres
       - elasticsearch
     ports:
       - "80:8080"
       - "11311:11311"
     volumes:
       - ./mnt/liferay/base:/etc/opt/liferay
+      - /mnt/liferay/properties:/opt/liferay/tomcat/webapps/ROOT/WEB-INF/classes
       - lr-data:/opt/liferay/data/document_library
 
 volumes:
